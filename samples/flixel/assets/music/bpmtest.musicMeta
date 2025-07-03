@@ -1,0 +1,6 @@
+[
+	{"t": 0, "d": 0, "ease": "instant", "bpm": 160, "tsn": 4, "tsd": 4},
+	{"t": 12230, "d": 6900, "ease": "linear", "bpm": 120, "tsn": 4, "tsd": 4},
+	{"t": 19480, "d": 3250, "ease": "linear", "bpm": 200, "tsn": 4, "tsd": 4},
+	{"t": 21040, "d": 1560, "ease": "quintOut", "bpm": 150, "tsn": 4, "tsd": 4}
+]
