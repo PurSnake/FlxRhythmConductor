@@ -11,7 +11,18 @@ class Main
 	{
 		var stage = Lib.current.stage;
 		var framerate:Int = 144;
-		#if html5
+		#if sys
+		var numReg = ~/\d+/;
+		for (i in Sys.args())
+		{
+			if (numReg.match(i))
+			{
+				var _framerate = Std.parseInt(numReg.matched(0));
+				if (!Math.isNaN(_framerate))
+					framerate = _framerate;
+			}
+		}
+		#elseif html5
 		framerate = 60;
 		#end
 		//timeManager = new FlxRhythmConductor();

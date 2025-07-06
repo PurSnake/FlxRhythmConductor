@@ -8,4 +8,4 @@ Has the correct sequential calculation of steps, beats and measures.
 
 ## TODO:
 - [ ] - MIDI support
-- [ ] - Implement FL Studio support
+- [ ] - Implement FL Studio support?

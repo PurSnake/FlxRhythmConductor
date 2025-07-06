@@ -1,34 +1,33 @@
-import haxe.PosInfos;
-import flixel.tweens.misc.NumTween;
-import flixel.sound.FlxSound;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
-import flixel.math.FlxMath;
-import flixel.text.FlxText;
-import flixel.input.keyboard.FlxKey;
-import flixel.tweens.FlxEase;
-import flixel.tweens.FlxTween;
-import flixel.util.FlxColor;
+import flixel.addons.display.FlxBackdrop;
+import flixel.addons.display.FlxGridOverlay;
 import flixel.addons.sound.FlxRhythmConductor;
 import flixel.addons.sound.FlxRhythmConductorUtil;
 import flixel.addons.sound.MusicTimeChangeEvent;
-import flixel.addons.display.FlxBackdrop;
-import flixel.addons.display.FlxGridOverlay;
+import flixel.input.keyboard.FlxKey;
+import flixel.math.FlxMath;
+import flixel.sound.FlxSound;
+import flixel.text.FlxBitmapFont;
+import flixel.text.FlxBitmapText;
+import flixel.text.FlxText;
+import flixel.util.FlxColor;
 import openfl.display.BitmapData;
-import openfl.geom.Rectangle;
 import openfl.geom.Point;
+import openfl.geom.Rectangle;
 
 using flixel.addons.sound.FlxRhythmConductorUtil;
 
 class PlayState extends FlxState
 {
-	var musicPath:String = "assets/music/third-sanctuary.ogg";
+	var musicPath:String = null;
+	var textBitmapFont:String = "assets/images/NokiaCellphoneFC-Small";
 
 	var haxeFlixelLogoLeft:FlxSprite;
 	var haxeFlixelLogoRight:FlxSprite;
 
-	var infoText:FlxText;
+	var infoText:FlxBitmapText;
 
 	override function create()
 	{
@@ -38,7 +37,7 @@ class PlayState extends FlxState
 		var bmd:BitmapData = FlxGridOverlay.createGrid(gridSize, gridSize, FlxG.width * 2, FlxG.height * 2, true, 0xFF292929, FlxColor.TRANSPARENT);
 
 		var textureWidth = gridSize * 20;
-		var textureHeight = gridSize * 20; 
+		var textureHeight = gridSize * 20;
 		var croppedBmd = new BitmapData(textureWidth - 1, textureHeight - 1, true, 0x0);
 		croppedBmd.copyPixels(bmd, new Rectangle(0, 0, textureWidth - 1, textureHeight - 1), new Point(0, 0));
 
@@ -58,22 +57,35 @@ class PlayState extends FlxState
 		haxeFlixelLogoRight.screenCenter();
 		haxeFlixelLogoRight.x += 250;
 
-		infoText = new FlxText(10, 0, 0, "Hello", 24);
+		infoText = new FlxBitmapText(10, 0, "Hello", FlxBitmapFont.fromAngelCode(textBitmapFont + ".png", textBitmapFont + ".xml"));
 		infoText.text = 'Boo';
 		add(infoText);
-		infoText.y = FlxG.height - infoText.textField.textHeight - 10;
+		infoText.y = FlxG.height - infoText.textHeight - 10;
 
 		final bindText:FlxText = new FlxText(10, 10 + 20, FlxG.width, "What's up, World!?", 18);
 		bindText.text = [
-			"Z - Reset Conductor",
-			"X - Reset Conductor and destroy FlxG.sound.music",
-			"C, V, B, N, M, G - Load different tests",
-			"A/LEFT_D/RIGHT - change Conductor's target sound pitch",
-			"R - reset Conductor's target sound pitch to 1",
-			"J/L - scroll Conductor's target sound time",
-			"SPACE - pause/resume Conductor's target sound",
-			"1-9 - Set time to at the exact time, according that 9 it's end time",
-		].join(" | ");
+			[
+				"Z - Reset Conductor",
+				"X - Reset Conductor and destroy FlxG.sound.music",
+			],
+			[
+				"C, V, B, N, M, G - Load different tests",
+			],
+			[
+				"R - Reset Conductor's target sound pitch to 1",
+				"A/LEFT, D/RIGHT - Change Conductor's target sound pitch",
+			],
+			[
+				"J/L - Scroll Conductor's offset",
+				"K - Reset Conductor offset",
+			],
+			[
+				"SPACE - Pause/Resume Conductor's target sound",
+			],
+			[
+				"1-9 - Set Conductor's target time to at the exact time, according that 9 it's end time",
+			]
+		].map(i -> i.join(" | ")).join("\n");
 		add(bindText);
 		bindText.active = false;
 	}
@@ -84,14 +96,16 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.scale.set(4, 4);
+			var scale = backward ? 2 : 4;
+			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.scale.set(5, 5);
+			var scale = backward ? 2 : 5;
+			haxeFlixelLogoRight.scale.set(scale, scale);
 		});
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
 	}
@@ -103,14 +117,14 @@ class PlayState extends FlxState
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.angle += 15;
+			haxeFlixelLogoLeft.angle += 15 * (backward ? -1 : 1);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.angle += 15;
+			haxeFlixelLogoRight.angle += 15 * (backward ? -1 : 1);
 		});
 	}
 
@@ -120,14 +134,16 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.scale.set(4, 4);
+			var scale = backward ? 2 : 4;
+			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.scale.set(5, 5);
+			var scale = backward ? 2 : 5;
+			haxeFlixelLogoRight.scale.set(scale, scale);
 		});
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
 	}
@@ -138,14 +154,16 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.scale.set(4, 4);
+			var scale = backward ? 2 : 4;
+			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.scale.set(5, 5);
+			var scale = backward ? 2 : 5;
+			haxeFlixelLogoRight.scale.set(scale, scale);
 		});
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
 	}
@@ -156,14 +174,16 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.scale.set(4, 4);
+			var scale = backward ? 2 : 4;
+			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.scale.set(5, 5);
+			var scale = backward ? 2 : 5;
+			haxeFlixelLogoRight.scale.set(scale, scale);
 		});
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
 	}
@@ -174,21 +194,22 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add(step ->
+		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoLeft.scale.set(4, 4);
+			var scale = backward ? 2 : 4;
+			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add(beat ->
+		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
 		{
-			haxeFlixelLogoRight.scale.set(5, 5);
+			var scale = backward ? 2 : 5;
+			haxeFlixelLogoRight.scale.set(scale, scale);
 		});
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
 	}
 
 	public override function update(elapsed:Float)
 	{
-		infoText.text = "";
 		if (FlxG.keys.justPressed.Z)
 		{
 			// Kills FlxRhythmConductor, but doesn't kill music, so it will just load defualt timeChange and track time!
@@ -245,10 +266,13 @@ class PlayState extends FlxState
 				target.pitch += elapsed;
 
 			if (FlxG.keys.pressed.J)
-				target.time -= elapsed * 1000;
+				conductor.musicPositionOffset -= elapsed * 1000;
+
+			if (FlxG.keys.justPressed.K)
+				conductor.musicPositionOffset = 0;
 
 			if (FlxG.keys.pressed.L)
-				target.time += elapsed * 1000;
+				conductor.musicPositionOffset += elapsed * 1000;
 
 			if (FlxG.keys.justPressed.R)
 				target.pitch = 1;
@@ -263,24 +287,30 @@ class PlayState extends FlxState
 
 			var justPressed = FlxG.keys.firstJustPressed();
 			if (FlxMath.inBounds(justPressed, FlxKey.ONE, FlxKey.NINE))
-				target.time = FlxMath.remapToRange(justPressed, FlxKey.ONE, FlxKey.NINE, 0, conductor.musicLength);
+				conductor.percent = FlxMath.remapToRange(justPressed, FlxKey.ONE, FlxKey.NINE, 0, 1);
+
+			if (FlxG.keys.justPressed.P)
+				trace(conductor.percent);
 		}
 
 		super.update(elapsed);
 		conductor.update(null);
 
+		var text = new StringBuf();
 		if (target != null)
-			infoText.text += 'Current target pitch: ${target.pitch}\n';
+			text.add('Current target pitch: ${target.pitch}\n');
 		else
-			infoText.text += 'NO SOUND INITIALIZED!\nFlxRhythmConductor will be updated in real time\n\n';
+			text.add('NO SOUND INITIALIZED!\nFlxRhythmConductor will be updated in real time\n\n');
 
-		infoText.text += 'Current bpm: ${conductor.currentBpm}\n';
-		infoText.text += 'Current step: ${conductor.currentStep}\n';
-		infoText.text += 'Current beat: ${conductor.currentBeat}\n';
-		infoText.text += 'Current time signature: ${conductor.timeSignatureNumerator}/${conductor.timeSignatureDenominator}\n';
-		infoText.text += 'Current measure: ${conductor.currentMeasure}\n';
-		infoText.text += 'Current musicPosition: ${conductor.musicPosition}\n';
-		infoText.text += 'Current music: $musicPath';
-		infoText.y = FlxG.height - infoText.textField.textHeight - 10;
+		text.add('Current bpm: ${conductor.currentBpm}\n');
+		text.add('Current step: ${conductor.currentStep}\n');
+		text.add('Current beat: ${conductor.currentBeat}\n');
+		text.add('Current time signature: ${conductor.timeSignatureNumerator}/${conductor.timeSignatureDenominator}\n');
+		text.add('Current measure: ${conductor.currentMeasure}\n');
+		text.add('Current musicPosition: ${conductor.musicPosition}\n');
+		text.add('Current musicOffset: ${conductor.musicPositionOffset}\n');
+		text.add('Current music: $musicPath');
+		infoText.text = text.toString();
+		infoText.y = FlxG.height - infoText.textHeight - 10;
 	}
 }

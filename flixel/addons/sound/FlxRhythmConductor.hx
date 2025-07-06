@@ -15,6 +15,7 @@ import haxe.Log;
 
 using flixel.addons.sound.FlxRhythmConductorUtil;
 
+typedef RhythmSignal<T> = FlxTypedSignal<(time:T, backward:Bool)->Void>;
 @:nullSafety
 class FlxRhythmConductor implements IFlxDestroyable
 {
@@ -24,9 +25,16 @@ class FlxRhythmConductor implements IFlxDestroyable
 
 	public var timeChanges:Array<MusicTimeChangeEvent> = [];
 	public var currentTimeChange(default, null):Null<MusicTimeChangeEvent>;
+	public var prevCurrentTimeChange(default, null):Null<MusicTimeChangeEvent>;
 
-	public var musicPosition(default, null):Float = 0;
-	public var frameMusicPosition(default, null):Float = 0;
+	public var musicPosition(get, null):Float = 0;
+	public var frameMusicPosition(get, null):Float = 0;
+
+	public var musicPositionOffset:Float = Constants.MUSIC_POSITION_OFFSET;
+
+	public var allowInterpolateSignals:Bool = true;
+
+	public var percent(get, set):Float;
 
 	public var musicLength(get, never):Float;
 
@@ -42,36 +50,40 @@ class FlxRhythmConductor implements IFlxDestroyable
 	public var currentStep(default, null):Int = 0;
 	public var currentStepTime(default, null):Float = 0;
 
-	public static var measureHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
-	public var onMeasureHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
+	public static var measureHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
 
-	public static var beatHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
-	public var onBeatHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
+	public var onMeasureHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
 
-	public static var stepHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
-	public var onStepHit(default, null):FlxTypedSignal<Int->Void> = new FlxTypedSignal<Int->Void>();
+	public static var beatHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
 
-	public static var bpmChange(default, null):FlxTypedSignal<Float->Void> = new FlxTypedSignal<Float->Void> ();
-	public var onBpmChange(default, null):FlxTypedSignal<Float->Void> = new FlxTypedSignal<Float->Void> ();
+	public var onBeatHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
 
-	static function dispatchMeasureHit(measure:Int):Void
+	public static var stepHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
+
+	public var onStepHit(default, null):RhythmSignal<Int> = new RhythmSignal<Int>();
+
+	public static var bpmChange(default, null):RhythmSignal<Float> = new RhythmSignal<Float>();
+
+	public var onBpmChange(default, null):RhythmSignal<Float> = new RhythmSignal<Float>();
+
+	static function dispatchMeasureHit(measure:Int, backward:Bool):Void
 	{
-		FlxRhythmConductor.measureHit.dispatch(measure);
+		FlxRhythmConductor.measureHit.dispatch(measure, backward);
 	}
 
-	static function dispatchBeatHit(beat:Int):Void
+	static function dispatchBeatHit(beat:Int, backward:Bool):Void
 	{
-		FlxRhythmConductor.beatHit.dispatch(beat);
+		FlxRhythmConductor.beatHit.dispatch(beat, backward);
 	}
 
-	static function dispatchStepHit(step:Int):Void
+	static function dispatchStepHit(step:Int, backward:Bool):Void
 	{
-		FlxRhythmConductor.stepHit.dispatch(step);
+		FlxRhythmConductor.stepHit.dispatch(step, backward);
 	}
 
-	static function dispatchBpmChange(bpm:Float):Void
+	static function dispatchBpmChange(bpm:Float, backward:Bool):Void
 	{
-		FlxRhythmConductor.bpmChange.dispatch(bpm);
+		FlxRhythmConductor.bpmChange.dispatch(bpm, backward);
 	}
 
 	static function setupSingleton(input:FlxRhythmConductor):Void
@@ -97,7 +109,7 @@ class FlxRhythmConductor implements IFlxDestroyable
 	}
 
 	var overrideBpm:Null<Float> = null;
-	@:noCompletion var prevTimestamp:Float = 0;
+	// @:noCompletion var prevTimestamp:Float = 0;
 	@:noCompletion var prevTime:Float = 0;
 
 	@:noCompletion var _updateTarget:Null<FlxSound>;
@@ -194,23 +206,27 @@ class FlxRhythmConductor implements IFlxDestroyable
 
 	public var timeSignatureDenominator(get, never):FlxTimeSignature;
 
+	var _elapsed:Float = 0.0;
+
 	public function update(?musicPos:Float) // TODO: Avoid constantly using iterations
 	{
 		_updateTarget = target;
 
-		var oldMeasure:Float = this.currentMeasure;
-		var oldBeat:Float = this.currentBeat;
-		var oldStep:Float = this.currentStep;
+		var oldMeasure:Int = this.currentMeasure;
+		var oldBeat:Int = this.currentBeat;
+		var oldStep:Int = this.currentStep;
 		var oldBpm:Float = this.currentBpm;
 
 		var frameMusicPos:Float = frameMusicPosition + FlxG.elapsed * Constants.MS_PER_SECS;
 		if (_updateTarget == null && musicPos == null)
 		{
-			musicPosition += FlxG.elapsed * Constants.MS_PER_SECS;
-			frameMusicPosition += FlxG.elapsed * Constants.MS_PER_SECS;
+			_elapsed = FlxG.elapsed * Constants.MS_PER_SECS;
+			musicPosition += _elapsed;
+			frameMusicPosition += _elapsed;
 		}
 		else
 		{
+			var prevMusicPosition = musicPosition;
 			var musicPosValue:Float = musicPos ?? _updateTarget?.time ?? 0;
 
 			if (_updateTarget != null && !_updateTarget.playing)
@@ -226,15 +242,20 @@ class FlxRhythmConductor implements IFlxDestroyable
 				musicPosition = musicPosValue;
 				frameMusicPosition = frameMusicPos;
 			}
+			_elapsed = musicPosition - prevMusicPosition;
 		}
 
 		currentTimeChange = timeChanges[0];
+		prevCurrentTimeChange = null;
 		if (musicPosition > 0.0)
 		{
 			for (i in 0...timeChanges.length)
 			{
 				if (this.musicPosition >= timeChanges[i].time)
+				{
+					prevCurrentTimeChange = currentTimeChange;
 					currentTimeChange = timeChanges[i];
+				}
 
 				if (this.musicPosition < timeChanges[i].time)
 					break;
@@ -244,27 +265,52 @@ class FlxRhythmConductor implements IFlxDestroyable
 		if (_updateTarget != null && overrideBpm == null && currentTimeChange == null)
 			trace("[WARNING] Unable to obtain timeChange, cancelling musicPos update.");
 		else
-			/* if (musicPosition > 0.0) */ updateValues();
+			/* if (musicPosition > 0.0) */ _updateValues();
 
 		if (currentBpm != oldBpm)
-			this.onBpmChange.dispatch(currentBpm);
+			this.onBpmChange.dispatch(currentBpm, currentBpm < oldBpm);
 
-		if (currentStep != oldStep)
-			this.onStepHit.dispatch(currentStep);
+		_dispatchChange(oldStep, currentStep, this.onStepHit);
+		_dispatchChange(oldBeat, currentBeat, this.onBeatHit);
+		_dispatchChange(oldMeasure, currentMeasure, this.onMeasureHit);
 
-		if (currentBeat != oldBeat)
-			this.onBeatHit.dispatch(currentBeat);
-
-		if (currentMeasure != oldMeasure)
-			this.onMeasureHit.dispatch(currentMeasure);
-
-		// only update the timestamp if songPosition actually changed
+		// only update the timestamp if musicPosition actually changed
 		// which it doesn't do every frame!
 		if (musicPosition != prevTime)
 		{
 			// Update the timestamp for use in-between frames.
 			frameMusicPosition = prevTime = musicPosition;
-			prevTimestamp = Std.int(haxe.Timer.stamp() * Constants.MS_PER_SECS);
+			// prevTimestamp = lime.system.System.getTimer();
+		}
+	}
+
+	function _dispatchChange(oldVal:Int, currentVal:Int, dispatcher:RhythmSignal<Int>)
+	{
+		if (currentVal != oldVal)
+		{
+			if (allowInterpolateSignals && Math.abs(currentVal - oldVal) > 1.)
+			{
+				if (oldVal < currentVal)
+				{
+					var i:Int = oldVal;
+					while (i < currentVal)
+					{
+						dispatcher.dispatch(++i, false);
+					}
+				}
+				else
+				{
+					var i:Int = oldVal;
+					while (i > currentVal)
+					{
+						dispatcher.dispatch(i--, true);
+					}
+				}
+			}
+			else
+			{
+				dispatcher.dispatch(currentVal, currentVal < oldVal);
+			}
 		}
 	}
 
@@ -272,17 +318,12 @@ class FlxRhythmConductor implements IFlxDestroyable
 	{
 		if (currentTimeChange == null)
 			return Constants.BPM;
-		if (currentTimeChange.duration > 0 && musicPos <= currentTimeChange.endTime)
+		if (prevCurrentTimeChange != null && currentTimeChange.duration > 0 && musicPos <= currentTimeChange.endTime)
 		{
-			final prevTimeChange = timeChanges[timeChanges.indexOf(currentTimeChange) - 1];
-
-			if (prevTimeChange == null)
-				return currentTimeChange.bpm;
-
-			var neededBpm = FlxMath.lerp(prevTimeChange.bpm, currentTimeChange.bpm, currentTimeChange.caltEase(musicPos));
+			var neededBpm = FlxMath.lerp(prevCurrentTimeChange.bpm, currentTimeChange.bpm, currentTimeChange.caltEase(musicPos));
 			// trace(currentTimeChange.caltEase(musicPos));
-			if (musicPos + FlxG.elapsed * Constants.MS_PER_SECS >= currentTimeChange.endTime)
-				neededBpm = currentTimeChange.bpm;
+			// if (musicPos + _elapsed >= currentTimeChange.endTime)
+			// 	neededBpm = currentTimeChange.bpm;
 
 			return neededBpm;
 		}
@@ -312,16 +353,15 @@ class FlxRhythmConductor implements IFlxDestroyable
 		// FlxG.watch.addQuick("ct:ease", FlxRhythmConductor.instance.currentTimeChange?.ease);
 	}
 
-	function updateValues()
+	function _updateValues()
 	{
-		// currentStepTime = currentTimeChange != null ? getCumulativeSteps(musicPosition) : FlxMath.roundDecimal((musicPosition / stepLengthMs), 4);
 		currentStepTime = getCumulativeSteps(musicPosition);
 		currentBeatTime = currentStepTime / Constants.STEPS_PER_BEAT;
 		currentMeasureTime = getCumulativeMeasures(musicPosition);
 
-		currentStep = Math.ceil(currentStepTime);
-		currentBeat = Math.ceil(currentBeatTime);
-		currentMeasure = Math.ceil(currentMeasureTime);
+		currentStep = Math.floor(currentStepTime);
+		currentBeat = Math.floor(currentBeatTime);
+		currentMeasure = Math.floor(currentMeasureTime);
 	}
 
 	public function getCumulativeSteps(time:Float):Float
@@ -336,8 +376,8 @@ class FlxRhythmConductor implements IFlxDestroyable
 
 		for (i in 0...timeChanges.length)
 		{
-			var event = timeChanges[i];
-			var nextEvent = (i < timeChanges.length - 1) ? timeChanges[i + 1] : null;
+			var event:MusicTimeChangeEvent = timeChanges[i];
+			var nextEvent:Null<MusicTimeChangeEvent> = timeChanges[i + 1];
 			var eventEndTime = event.time;
 
 			if (lastEventEndTime < event.time && time > lastEventEndTime)
@@ -424,7 +464,7 @@ class FlxRhythmConductor implements IFlxDestroyable
 	public function getCumulativeMeasures(time:Float):Float
 	{
 		if (timeChanges.length == 0)
-			return currentBeatTime / timeSignatureNumerator;
+			return currentBeatTime / Constants.BEATS_PER_MEASURE * FlxRhythmConductorUtil.getTimeSignatureFactor(Constants.TIME_SIGNATURE_NUM, Constants.TIME_SIGNATURE_DEN);
 
 		var totalMeasures:Float = 0;
 		var lastEventEndTime:Float = 0;
@@ -435,8 +475,8 @@ class FlxRhythmConductor implements IFlxDestroyable
 
 		for (i in 0...timeChanges.length)
 		{
-			var event = timeChanges[i];
-			var nextEvent = (i < timeChanges.length - 1) ? timeChanges[i + 1] : null;
+			var event:MusicTimeChangeEvent = timeChanges[i];
+			var nextEvent:Null<MusicTimeChangeEvent> = timeChanges[i + 1];
 			var eventEndTime = event.time;
 
 			if (lastEventEndTime < event.time && time > lastEventEndTime)
@@ -520,6 +560,35 @@ class FlxRhythmConductor implements IFlxDestroyable
 		}
 
 		return totalMeasures;
+	}
+
+	function _setTargetTime(time:Float) {
+		var _target:Null<FlxSound> = target;
+		if (_target != null)
+			_target.time = time;
+	}
+
+	inline function get_musicPosition():Float
+	{
+		return (musicPosition + musicPositionOffset).clamp(0, musicLength);
+	}
+
+	inline function get_frameMusicPosition():Float
+	{
+		return (frameMusicPosition + musicPositionOffset).clamp(0, musicLength);
+	}
+
+	inline function set_percent(newPercent:Float):Float
+	{
+		final newMusicPos = musicLength * newPercent;
+		_setTargetTime(newMusicPos);
+		this.update(newMusicPos);
+		return newPercent;
+	}
+
+	inline function get_percent():Float
+	{
+		return musicPosition / (Math.max(1, musicLength));
 	}
 
 	inline function get_musicLength():Float

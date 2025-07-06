@@ -5,6 +5,8 @@ import flixel.addons.sound.FlxTimeSignature;
 @:nullSafety
 class FlxRhythmConductorConstants
 {
+	public static inline final MUSIC_POSITION_OFFSET:Float = 0.0;
+	
 	public static inline final MS_PER_SECS:Int = 1000;
 	public static inline final SECS_PER_MIN:Int = 60;
 	public static inline final MS_PER_MIN:Int = MS_PER_SECS * SECS_PER_MIN;
