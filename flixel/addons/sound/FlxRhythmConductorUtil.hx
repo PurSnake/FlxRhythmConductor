@@ -91,11 +91,15 @@ class FlxRhythmConductorUtil
 	{
 		final arrayOfChanges:Array<MusicTimeChangeEvent> = [];
 		var lastBPM:Float = FlxRhythmConductorConstants.BPM;
+		var lastTSN:FlxTimeSignature = FlxRhythmConductorConstants.TIME_SIGNATURE_NUM;
+		var lastTSD:FlxTimeSignature = FlxRhythmConductorConstants.TIME_SIGNATURE_DEN;
 		if (data != null && data.length > 0)
 			for (data in data)
 			{
-				var bpm = data.bpm ?? lastBPM;
-				arrayOfChanges.push(new MusicTimeChangeEvent(data.t, bpm, data.tsn, data.tsd, data.d, data.ease));
+				lastBPM = data.bpm ?? lastBPM;
+				lastTSN = data.tsn ?? lastTSN;
+				lastTSD = data.tsd ?? lastTSD;
+				arrayOfChanges.push(new MusicTimeChangeEvent(data.t, lastBPM, lastTSN, lastTSD, data.d, data.ease));
 			}
 
 		return arrayOfChanges;
