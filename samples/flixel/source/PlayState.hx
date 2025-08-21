@@ -96,13 +96,13 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 4;
 			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 5;
 			haxeFlixelLogoRight.scale.set(scale, scale);
@@ -117,12 +117,12 @@ class PlayState extends FlxState
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
 		FlxRhythmConductor.instance.loadMetaFromFilePath(musicPath);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			haxeFlixelLogoLeft.angle += 15 * (backward ? -1 : 1);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			haxeFlixelLogoRight.angle += 15 * (backward ? -1 : 1);
 		});
@@ -134,13 +134,13 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 4;
 			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 5;
 			haxeFlixelLogoRight.scale.set(scale, scale);
@@ -154,13 +154,13 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 4;
 			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 5;
 			haxeFlixelLogoRight.scale.set(scale, scale);
@@ -174,13 +174,13 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 4;
 			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 5;
 			haxeFlixelLogoRight.scale.set(scale, scale);
@@ -194,13 +194,13 @@ class PlayState extends FlxState
 		haxeFlixelLogoLeft.angle = haxeFlixelLogoRight.angle = 0;
 		FlxRhythmConductor.reset();
 		FlxG.sound.playMusic(musicPath, 1);
-		FlxRhythmConductor.instance.onBeatHit.add((beat:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onBeatHit.connect((beat:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 4;
 			haxeFlixelLogoLeft.scale.set(scale, scale);
 			FlxG.sound.play("assets/sounds/metronome.ogg");
 		});
-		FlxRhythmConductor.instance.onMeasureHit.add((measure:Int, backward:Bool) ->
+		FlxRhythmConductor.instance.onMeasureHit.connect((measure:Int, backward:Bool) ->
 		{
 			var scale = backward ? 2 : 5;
 			haxeFlixelLogoRight.scale.set(scale, scale);

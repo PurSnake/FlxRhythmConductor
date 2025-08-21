@@ -6,8 +6,9 @@
   "description": "Fresh high-quality RhythmConductor for HaxeFlixel.",
   "version": "0.2.0",
   "releasenote": "Initial release of FlxRhythmConductor.",
-  "contributors": ["PurSnake", "Redar13"],
+  "contributors": ["PurSnake", "Redar13", "gimmesoda"],
   "dependencies": {
-    "flixel": ""
-  }
+    "hxsignal": ""
+  },
+  "classPath": "src"
 }

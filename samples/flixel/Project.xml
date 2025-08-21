@@ -38,6 +38,7 @@
 	<haxelib name="flixel" />
 	<haxelib name="flixel-addons" />
 	<haxelib name="flxrhythmconductor" path="../../" />
+	<haxelib name="hxsignal" path="../../../HxSignal" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 

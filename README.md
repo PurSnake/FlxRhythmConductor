@@ -1,6 +1,6 @@
-# <p align="left"> FlxRhythmConductor </p>
+# <p align="left"> RhythmConductor </p>
 
-New and fresh rhythm conductor for haxeflixel!
+New and fresh rhythm conductor for HaxeFlixel and Heaps!
 
 Supports: BPM change, smooth BPM change, time signature change.
 
